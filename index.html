@@ -83,8 +83,7 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <p>##C 语言中的 static 的理解</p>
-<p>C 语言中， static 是用来表示存储点， 生存期和作用域的。<br>分为 static 全局变量， static 局部变量， static 函数。</p>
+        <p>C 语言中， static 是用来表示存储点， 生存期和作用域的。<br>分为 static 全局变量， static 局部变量， static 函数。</p>
 <p>.text段保存进程所执行的程序二进制文件，<br>.data段保存进程所有的已初始化的全局变量，<br>.bss段保存进程未初始化的全局变量（其他段中还有很多乱七八糟的段，暂且不表）。<br>在进程的整个生命周期中，.data段和.bss段内的数据时跟整个进程同生共死的，也就是在进程结束之后这些数据才会被回收。</p>
 <p>static 全局变量 : 静态全局变量。<br>存储点： 静态全局变量和其他的全局变量的存储地点并没有区别，都是在.data段（已初始化）或者.bss段（未初始化）内，但是它只在定义它的源文件内有效，其他源文件无法访问它。<br>生存期： 和进程一致。<br>作用域： 只在定义它的源文件内有效，其他源文件无法访问它。<br>初值： 取决于用户是否为static 全局变量赋初值。 若用户已为static 全局变量赋初值，则放在 .data段； 若未赋初值，则放在 .bss段内，编译器不会为static 全局变量赋初值。</p>
 <p>static 局部变量 : 静态局部变量<br>普通的局部变量在栈空间上分配，这个局部变量所在的函数被多次调用时，每次调用这个局部变量在栈上的位置都不一定相同。局部变量也可以在堆上动态分配，但是记得使用完这个堆空间后要释放之。<br>存储点： 静态局部变量被编译器放在全局存储区.data（注意：不在.bss段内，因为编译器会自动为static 局部变量赋初值）。<br>生存期： 和进程一致。<br>作用域： 静态局部变量只能被其作用域内的变量或函数访问。也就是说虽然它会在程序的整个生命周期中存在，由于它是static的，它不能被其他的函数和源文件访问。<br>初值： 静态局部变量如果没有被用户初始化，则会被编译器自动赋值为0，以后每次调用静态局部变量的时候都用上次调用后的值。这个比较好理解，每次函数调用静态局部变量的时候都修改它然后离开，下次读的时候从全局存储区读出的静态局部变量就是上次修改后的值。</p>
@@ -92,11 +91,12 @@
 <p>static函数 :<br>C++面向对象编程中的private函数，私有函数只有该类的成员变量或成员函数可以访问。在C语言中，也有“private函数”，它就是接下来要说的static函数，完成面向对象编程中private函数的功能。<br>当你的程序中有很多个源文件的时候，你肯定会让某个源文件只提供一些外界需要的接口，其他的函数可能是为了实现这些接口而编写，这些其他的函数你可能并不希望被外界（非本源文件）所看到，这时候就可以用static修饰这些“其他的函数”。<br>所以static函数的作用域是本源文件，把它想象为面向对象中的private函数就可以了。</p>
 <p>结论： 只有是 static 变量或 static 函数，那的作用域都是本源文件， 而 staic 局部变量则更严格，只是本文件的本作用域内。生存期都是和进程一致。<br>example 源代码如下:<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line">/home/elopssv/cpp-dev/link/static&gt;cat static.h</span><br><span class="line">//static.h</span><br><span class="line"><span class="comment">#include &lt;stdio.h&gt;</span></span><br><span class="line">void printStaticGlobalVariable();</span><br><span class="line">void printStaticLocalVariable();</span><br><span class="line">static void staticFunction();/home/elopssv/cpp-dev/link/static&gt;</span><br><span class="line">/home/elopssv/cpp-dev/link/static&gt;cat static.c</span><br><span class="line">//static.c</span><br><span class="line"><span class="comment">#include "static.h"</span></span><br><span class="line"></span><br><span class="line">static char* helloStr = <span class="string">"hello cobing!"</span>;// static global variable</span><br><span class="line">void printStaticGlobalVariable()</span><br><span class="line">&#123;</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">"%s\n"</span>, helloStr);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">void printStaticLocalVariable()</span><br><span class="line">&#123;</span><br><span class="line">  int normal = 0;</span><br><span class="line">  static int staticInt = 0;    //static <span class="built_in">local</span> var</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">"normal = %d ---- staticInt = %d\n"</span>,normal, staticInt);</span><br><span class="line">  normal++;</span><br><span class="line">  staticInt++;</span><br><span class="line">  staticFunction();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">static void staticFunction()</span><br><span class="line">&#123;</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">"[staticFunction], only can be called by the function or variable in the same source file.\n"</span>);</span><br><span class="line">&#125;</span><br><span class="line">/home/elopssv/cpp-dev/link/static&gt;</span><br><span class="line">/home/elopssv/cpp-dev/link/static&gt;cat main.c</span><br><span class="line"><span class="comment">#include "static.h"</span></span><br><span class="line"></span><br><span class="line">int main()</span><br><span class="line">&#123;</span><br><span class="line">  printStaticGlobalVariable(); //main() <span class="keyword">function</span> can not access the static global variable helloStr directory.</span><br><span class="line">  printStaticLocalVariable();</span><br><span class="line">  //staticFunction();</span><br><span class="line">  printStaticLocalVariable();</span><br><span class="line">  <span class="built_in">return</span> 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>编译和执行结果如下：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">/home/elopssv/cpp-dev/link/static&gt;gcc static.c static.h main.c -o prog</span><br><span class="line">/home/elopssv/cpp-dev/link/static&gt;ls -l</span><br><span class="line">total 24</span><br><span class="line">-rw-r--r-- 1 elopssv cnshlogin  263 Dec 21 09:00 main.c</span><br><span class="line">-rwxr-xr-x 1 elopssv cnshlogin 8856 Dec 21 09:03 prog</span><br><span class="line">-rw-r--r-- 1 elopssv cnshlogin  542 Dec 21 09:03 static.c</span><br><span class="line">-rw-r--r-- 1 elopssv cnshlogin  130 Dec 21 09:02 static.h</span><br><span class="line"></span><br><span class="line">/home/elopssv/cpp-dev/link/static&gt;./prog</span><br><span class="line">hello cobing!</span><br><span class="line">normal = 0 ---- staticInt = 0</span><br><span class="line">[staticFunction], only can be called by the <span class="keyword">function</span> or variable <span class="keyword">in</span> the same <span class="built_in">source</span> file.</span><br><span class="line">normal = 0 ---- staticInt = 1</span><br><span class="line">[staticFunction], only can be called by the <span class="keyword">function</span> or variable <span class="keyword">in</span> the same <span class="built_in">source</span> file.</span><br></pre></td></tr></table></figure></p>
+<p>reference list:<br><a href="http://blog.csdn.net/keyeagle/article/details/6708077/" target="_blank" rel="noopener">C语言中的static 详细分析</a></p>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/12/21/static-in-C-langue/" data-id="cjbfsn1on000388gj45micv2m" class="article-share-link">Partager</a>
+      <a data-url="http://yoursite.com/2017/12/21/static-in-C-langue/" data-id="cjbfssmfn00031ggjah3rc85b" class="article-share-link">Partager</a>
       
       
     </footer>
@@ -133,7 +133,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/12/01/file-IO/" data-id="cjbfsn1oe000188gjnonsvthe" class="article-share-link">Partager</a>
+      <a data-url="http://yoursite.com/2017/12/01/file-IO/" data-id="cjbfssmen00011ggjtop3wyip" class="article-share-link">Partager</a>
       
       
     </footer>
@@ -170,7 +170,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/11/24/Computer-Systems/" data-id="cjbfsn1o4000088gjnzwjll98" class="article-share-link">Partager</a>
+      <a data-url="http://yoursite.com/2017/11/24/Computer-Systems/" data-id="cjbfssmee00001ggj9xicx0gw" class="article-share-link">Partager</a>
       
       
     </footer>
@@ -215,7 +215,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/11/17/hello-world/" data-id="cjbfsn1ok000288gj1ah8czvp" class="article-share-link">Partager</a>
+      <a data-url="http://yoursite.com/2017/11/17/hello-world/" data-id="cjbfssmfh00021ggjwqefgu7y" class="article-share-link">Partager</a>
       
       
     </footer>
